@@ -41,7 +41,8 @@ export const Chat = () => {
     setConversations,
     loadConversations,
     handleNewChat,
-    handleSelectConversation
+    handleSelectConversation,
+    handleDeleteConversation
   } = useConversationManagement({ user, isMounted });
   
   // Use our extracted message handling hook
@@ -84,6 +85,7 @@ export const Chat = () => {
       onSendMessage={handleSendMessage}
       onNewChat={handleNewChat}
       onSelectConversation={handleSelectConversation}
+      onDeleteConversation={handleDeleteConversation}
       onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       newConversationId={newConversationId}
     />

@@ -227,7 +227,7 @@ async def check_rate_limit(supabase: Client, user_id: str, rate_limit: int = 5) 
 async def store_request(supabase: Client, request_id: str, user_id: str, query: str):
     """
     Store a request in the requests table for rate limiting purposes.
-    
+
     Args:
         supabase: Supabase client
         request_id: Unique request ID
@@ -243,4 +243,51 @@ async def store_request(supabase: Client, request_id: str, user_id: str, query: 
         }).execute()
     except Exception as e:
         logger.error(f"Error storing request: {str(e)}")
+
+
+async def archive_conversation(supabase: Client, session_id: str, user_id: str) -> bool:
+    """Archive a conversation (soft delete).
+
+    Args:
+        supabase: Supabase client
+        session_id: The session ID of the conversation to archive
+        user_id: The user ID to verify ownership
+
+    Returns:
+        bool: True if archived successfully
+
+    Raises:
+        HTTPException: If conversation not found or user not authorized
+    """
+    try:
+        # First verify the conversation exists and belongs to the user
+        response = supabase.table("conversations") \
+            .select("user_id") \
+            .eq("session_id", session_id) \
+            .execute()
+
+        if not response.data or len(response.data) == 0:
+            raise HTTPException(status_code=404, detail="Conversation not found")
+
+        # Verify user owns this conversation
+        if response.data[0]["user_id"] != user_id:
+            raise HTTPException(status_code=403, detail="Not authorized to delete this conversation")
+
+        # Archive the conversation by setting is_archived to true
+        update_response = supabase.table("conversations") \
+            .update({"is_archived": True}) \
+            .eq("session_id", session_id) \
+            .execute()
+
+        if update_response.data and len(update_response.data) > 0:
+            logger.info(f"Archived conversation {session_id} for user {user_id}")
+            return True
+        else:
+            raise HTTPException(status_code=500, detail="Failed to archive conversation")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error archiving conversation: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to archive conversation: {str(e)}")
 
