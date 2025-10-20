@@ -12,6 +12,9 @@ import json
 import sys
 import os
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 async def brave_web_search(query: str, http_client: AsyncClient, brave_api_key: str) -> str:
     """
@@ -100,7 +103,7 @@ async def web_search_tool(query: str, http_client: AsyncClient, brave_api_key: s
         else:
             return await searxng_web_search(query, http_client, searxng_base_url)
     except Exception as e:
-        print(f"Exception during websearch: {e}")
+        logger.error(f"Exception during websearch: {e}")
         return str(e)
 
 async def get_embedding(text: str, embedding_client: AsyncOpenAI) -> List[float]:
@@ -113,7 +116,7 @@ async def get_embedding(text: str, embedding_client: AsyncOpenAI) -> List[float]
         )
         return response.data[0].embedding
     except Exception as e:
-        print(f"Error getting embedding: {e}")
+        logger.error(f"Error getting embedding: {e}")
         return [0] * 1536  # Return zero vector on error
 
 async def retrieve_relevant_documents_tool(supabase: Client, embedding_client: AsyncOpenAI, user_query: str) -> str:
@@ -156,7 +159,7 @@ async def retrieve_relevant_documents_tool(supabase: Client, embedding_client: A
         return "\n\n---\n\n".join(formatted_chunks)
         
     except Exception as e:
-        print(f"Error retrieving documents: {e}")
+        logger.error(f"Error retrieving documents: {e}")
         return f"Error retrieving documents: {str(e)}" 
 
 async def list_documents_tool(supabase: Client) -> List[str]:
@@ -176,7 +179,7 @@ async def list_documents_tool(supabase: Client) -> List[str]:
         return str(result.data)
         
     except Exception as e:
-        print(f"Error retrieving documents: {e}")
+        logger.error(f"Error retrieving documents: {e}")
         return str([])
 
 async def get_document_content_tool(supabase: Client, document_id: str) -> str:
@@ -210,7 +213,7 @@ async def get_document_content_tool(supabase: Client, document_id: str) -> str:
         return "\n\n".join(formatted_content)[:20000]
         
     except Exception as e:
-        print(f"Error retrieving document content: {e}")
+        logger.error(f"Error retrieving document content: {e}")
         return f"Error retrieving document content: {str(e)}"     
 
 async def execute_sql_query_tool(supabase: Client, sql_query: str) -> str:
@@ -310,7 +313,7 @@ async def image_analysis_tool(supabase: Client, document_id: str, query: str) ->
         return result.data
 
     except Exception as e:
-        print(f"Error analyzing image: {e}")
+        logger.error(f"Error analyzing image: {e}")
         return f"Error analyzing image: {str(e)}"           
 
 def execute_safe_code_tool(code: str) -> str:
@@ -404,7 +407,9 @@ def execute_safe_code_tool(code: str) -> str:
     def safe_print(*args, **kwargs):
         end = kwargs.get('end', '\n')
         sep = kwargs.get('sep', ' ')
-        output.append(sep.join(str(arg) for arg in args) + end)
+        message = sep.join(str(arg) for arg in args) + end
+        output.append(message)
+        logger.info(message.rstrip())
     
     # Create restricted globals
     restricted_globals = {
