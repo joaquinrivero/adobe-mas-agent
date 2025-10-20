@@ -10,6 +10,7 @@ from supabase import Client
 from pathlib import Path
 from typing import List
 import os
+import logging
 
 from prompt import AGENT_SYSTEM_PROMPT
 from tools import (
@@ -27,6 +28,8 @@ from tools import (
 project_root = Path(__file__).resolve().parent
 dotenv_path = project_root / '.env'
 load_dotenv(dotenv_path, override=True)
+
+logger = logging.getLogger(__name__)
 
 # ========== Helper function to get model configuration ==========
 def get_model():
@@ -80,7 +83,7 @@ async def web_search(ctx: RunContext[AgentDeps], query: str) -> str:
         For Brave, this is a single paragraph.
         For SearXNG, this is a list of the top search results including the most relevant snippet from the page.
     """
-    print("Calling web_search tool")
+    logger.info("Calling web_search tool")
     return await web_search_tool(query, ctx.deps.http_client, ctx.deps.brave_api_key, ctx.deps.searxng_base_url)    
 
 @agent.tool
@@ -95,7 +98,7 @@ async def retrieve_relevant_documents(ctx: RunContext[AgentDeps], user_query: st
     Returns:
         A formatted string containing the top 4 most relevant documents chunks
     """
-    print("Calling retrieve_relevant_documents tool")
+    logger.info("Calling retrieve_relevant_documents tool")
     return await retrieve_relevant_documents_tool(ctx.deps.supabase, ctx.deps.embedding_client, user_query)
 
 @agent.tool
@@ -106,7 +109,7 @@ async def list_documents(ctx: RunContext[AgentDeps]) -> List[str]:
     Returns:
         List[str]: List of documents including their metadata (URL/path, schema if applicable, etc.)
     """
-    print("Calling list_documents tool")
+    logger.info("Calling list_documents tool")
     return await list_documents_tool(ctx.deps.supabase)
 
 @agent.tool
@@ -121,7 +124,7 @@ async def get_document_content(ctx: RunContext[AgentDeps], document_id: str) -> 
     Returns:
         str: The full content of the document with all chunks combined in order
     """
-    print("Calling get_document_content tool")
+    logger.info("Calling get_document_content tool")
     return await get_document_content_tool(ctx.deps.supabase, document_id)
 
 @agent.tool
@@ -155,7 +158,7 @@ async def execute_sql_query(ctx: RunContext[AgentDeps], sql_query: str) -> str:
     Returns:
         str: The results of the SQL query in JSON format
     """
-    print(f"Calling execute_sql_query tool with SQL: {sql_query }")
+    logger.info(f"Calling execute_sql_query tool with SQL: {sql_query }")
     return await execute_sql_query_tool(ctx.deps.supabase, sql_query)    
 
 @agent.tool
@@ -175,7 +178,7 @@ async def image_analysis(ctx: RunContext[AgentDeps], document_id: str, query: st
     Returns:
         str: An analysis of the image based on the query
     """
-    print("Calling image_analysis tool")
+    logger.info("Calling image_analysis tool")
     return await image_analysis_tool(ctx.deps.supabase, document_id, query)    
 
 # Using the MCP server instead for code execution, but you can use this simple version
@@ -192,6 +195,6 @@ async def execute_code(ctx: RunContext[AgentDeps], code: str) -> str:
     Returns:
         str: Anything printed out to standard output with the print command
     """    
-    print(f"executing code: {code}")
-    print(f"Result is: {execute_safe_code_tool(code)}")
+    logger.info(f"executing code: {code}")
+    logger.info(f"Result is: {execute_safe_code_tool(code)}")
     return execute_safe_code_tool(code)

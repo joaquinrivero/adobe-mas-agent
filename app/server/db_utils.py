@@ -13,6 +13,9 @@ from pydantic_ai.messages import ModelMessage, ModelMessagesTypeAdapter
 import random
 import string
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 async def fetch_conversation_history(supabase: Client, session_id: str, limit: int = 10) -> List[Dict[str, Any]]:
@@ -114,7 +117,7 @@ async def generate_conversation_title(title_agent: Agent, query: str) -> str:
         title = result.data.strip()
         return title
     except Exception as e:
-        print(f"Error generating conversation title: {str(e)}")
+        logger.error(f"Error generating conversation title: {str(e)}")
         return "New Conversation"  # Fallback title
 
 
@@ -180,7 +183,7 @@ async def convert_history_to_pydantic_format(conversation_history):
                 # Extend our messages list with the validated messages
                 messages.extend(ModelMessagesTypeAdapter.validate_json(message_data_json))
             except Exception as e:
-                print(f"Error parsing message_data: {str(e)}")
+                logger.error(f"Error parsing message_data: {str(e)}")
                 # Skip this message if there's an error parsing
                 continue
     
@@ -216,7 +219,7 @@ async def check_rate_limit(supabase: Client, user_id: str, rate_limit: int = 5) 
         # Check if the number of requests exceeds the rate limit
         return request_count < rate_limit
     except Exception as e:
-        print(f"Error checking rate limit: {str(e)}")
+        logger.error(f"Error checking rate limit: {str(e)}")
         # In case of error, allow the request to proceed
         return True
 
@@ -239,5 +242,5 @@ async def store_request(supabase: Client, request_id: str, user_id: str, query: 
             "timestamp": datetime.now(timezone.utc).isoformat()
         }).execute()
     except Exception as e:
-        print(f"Error storing request: {str(e)}")
+        logger.error(f"Error storing request: {str(e)}")
 

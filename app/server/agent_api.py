@@ -16,6 +16,7 @@ import json
 import sys
 import os
 import base64
+import logging
 
 # Import database utility functions
 from db_utils import (
@@ -44,6 +45,16 @@ from clients import get_agent_clients, get_mem0_client_async
 # Load environment variables from app/server/.env
 dotenv_path = Path(__file__).resolve().parent / '.env'
 load_dotenv(dotenv_path, override=True)
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Define clients as None initially
 embedding_client = None
@@ -134,14 +145,14 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Security(secu
         
         # Check if the request was successful
         if response.status_code != 200:
-            print(f"Auth response error: {response.text}")
+            logger.error(f"Auth response error: {response.text}")
             raise HTTPException(status_code=401, detail="Invalid authentication token")
         
         # Return the user information
         user_data = response.json()
         return user_data
     except Exception as e:
-        print(f"Authentication error: {str(e)}")
+        logger.error(f"Authentication error: {str(e)}")
         raise HTTPException(status_code=401, detail=f"Authentication error: {str(e)}")
 
 # Request/Response Models
@@ -260,7 +271,7 @@ async def pydantic_agent(request: AgentRequest, user: Dict[str, Any] = Depends(v
                 memory_messages = [{"role": "user", "content": request.query}]
                 memory_task = asyncio.create_task(mem0_client.add(memory_messages, user_id=request.user_id))
             except Exception as e:
-                print(f"Warning: Failed to retrieve memories: {e}")
+                logger.warning(f"Warning: Failed to retrieve memories: {e}")
                 memories_str = ""
         
         # Start title generation in parallel if this is a new conversation
@@ -297,7 +308,7 @@ async def pydantic_agent(request: AgentRequest, user: Dict[str, Any] = Depends(v
                         )
                         binary_contents.append(binary_content)
                     except Exception as e:
-                        print(f"Error processing file {file.fileName}: {str(e)}")
+                        logger.error(f"Error processing file {file.fileName}: {str(e)}")
             
             # Create input for the agent with the query and any binary contents
             agent_input = [request.query]
@@ -350,7 +361,7 @@ async def pydantic_agent(request: AgentRequest, user: Dict[str, Any] = Depends(v
                     }
                     yield json.dumps(final_data).encode('utf-8') + b'\n'
                 except Exception as e:
-                    print(f"Error processing title: {str(e)}")
+                    logger.warning(f"Error processing title: {str(e)}")
             else:
                 yield json.dumps({"text": full_response, "complete": True}).encode('utf-8') + b'\n'
 
@@ -359,13 +370,13 @@ async def pydantic_agent(request: AgentRequest, user: Dict[str, Any] = Depends(v
                 try:
                     await memory_task
                 except Exception as e:
-                    print(f"Error updating memories: {str(e)}")
+                    logger.warning(f"Error updating memories: {str(e)}")
                 
             # Wait for request tracking task to complete
             try:
                 await request_tracking_task
             except Exception as e:
-                print(f"Error tracking request: {str(e)}")
+                logger.warning(f"Error tracking request: {str(e)}")
             except asyncio.CancelledError:
                 # This is expected if the task was cancelled
                 pass
@@ -373,7 +384,7 @@ async def pydantic_agent(request: AgentRequest, user: Dict[str, Any] = Depends(v
         return StreamingResponse(stream_response(), media_type='text/plain')
 
     except Exception as e:
-        print(f"Error processing request: {str(e)}")
+        logger.error(f"Error processing request: {str(e)}")
         # Store error message in conversation if session_id exists
         if request.session_id:
             await store_message(
