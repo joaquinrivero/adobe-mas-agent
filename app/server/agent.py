@@ -21,7 +21,8 @@ from tools import (
     get_document_content_tool,
     execute_sql_query_tool,
     execute_safe_code_tool
-) 
+)
+from ag_ui_types import ConversationState 
 
 # Load environment variables from app/server/.env
 # Environment loading is handled by agent_api.py - this is kept for standalone usage
@@ -39,9 +40,13 @@ def get_model():
 
     return OpenAIModel(llm, provider=OpenAIProvider(base_url=base_url, api_key=api_key))
 
-# ========== Pydantic AI Agent ==========
+# ========== Pydantic AI Agent Dependencies ==========
 @dataclass
 class AgentDeps:
+    """
+    Standard agent dependencies for custom streaming endpoint.
+    Maintained for backward compatibility.
+    """
     supabase: Client
     embedding_client: AsyncOpenAI
     http_client: AsyncClient
@@ -49,14 +54,30 @@ class AgentDeps:
     searxng_base_url: str | None
     memories: str
 
+
+@dataclass
+class AgentStateDeps:
+    """
+    Agent dependencies with AG-UI state support.
+    Used by the AG-UI endpoint to support shared state between frontend and agent.
+    """
+    supabase: Client
+    embedding_client: AsyncOpenAI
+    http_client: AsyncClient
+    brave_api_key: str | None
+    searxng_base_url: str | None
+    memories: str
+    state: ConversationState  # AG-UI shared state
+
 # To use the code execution MCP server:
 # First uncomment the line below that defines 'code_execution_server', then also uncomment 'mcp_servers=[code_execution_server]'
 # Start this in a separate terminal with this command after installing Deno:
 # deno run -N -R=node_modules -W=node_modules --node-modules-dir=auto jsr:@pydantic/mcp-run-python sse
 # Instructions for installing Deno here: https://github.com/denoland/deno/
 # Pydantic AI docs for this MCP server: https://ai.pydantic.dev/mcp/run-python/
-# code_execution_server = MCPServerHTTP(url='http://localhost:3001/sse')  
+# code_execution_server = MCPServerHTTP(url='http://localhost:3001/sse')
 
+# Agent for custom streaming endpoint (backward compatibility)
 agent = Agent(
     get_model(),
     system_prompt=AGENT_SYSTEM_PROMPT,
@@ -65,8 +86,21 @@ agent = Agent(
     # mcp_servers=[code_execution_server]
 )
 
-@agent.system_prompt  
+# Agent for AG-UI endpoint with state support
+agui_agent = Agent(
+    get_model(),
+    system_prompt=AGENT_SYSTEM_PROMPT,
+    deps_type=AgentStateDeps,
+    retries=2,
+    # mcp_servers=[code_execution_server]
+)
+
+@agent.system_prompt
 def add_memories(ctx: RunContext[str]) -> str:
+    return f"\nUser Memories:\n{ctx.deps.memories}"
+
+@agui_agent.system_prompt
+def add_memories_agui(ctx: RunContext[AgentStateDeps]) -> str:
     return f"\nUser Memories:\n{ctx.deps.memories}"
 
 @agent.tool
@@ -188,13 +222,145 @@ async def execute_code(ctx: RunContext[AgentDeps], code: str) -> str:
     """
     Executes a given Python code string in a protected environment.
     Use print to output anything that you need as a result of executing the code.
-    
+
     Args:
         code: Python code to execute
-        
+
     Returns:
         str: Anything printed out to standard output with the print command
-    """    
+    """
     logger.info(f"executing code: {code}")
+    logger.info(f"Result is: {execute_safe_code_tool(code)}")
+    return execute_safe_code_tool(code)
+
+
+# ========== AG-UI Agent Tools ==========
+# Register the same tools for the AG-UI agent with AgentStateDeps
+
+@agui_agent.tool
+async def web_search_agui(ctx: RunContext[AgentStateDeps], query: str) -> str:
+    """
+    Search the web with a specific query and get a summary of the top search results.
+
+    Args:
+        ctx: The context for the agent including the HTTP client and optional Brave API key/SearXNG base url
+        query: The query for the web search
+
+    Returns:
+        A summary of the web search.
+        For Brave, this is a single paragraph.
+        For SearXNG, this is a list of the top search results including the most relevant snippet from the page.
+    """
+    logger.info("Calling web_search_agui tool")
+    return await web_search_tool(query, ctx.deps.http_client, ctx.deps.brave_api_key, ctx.deps.searxng_base_url)
+
+@agui_agent.tool
+async def retrieve_relevant_documents_agui(ctx: RunContext[AgentStateDeps], user_query: str) -> str:
+    """
+    Retrieve relevant document chunks based on the query with RAG.
+
+    Args:
+        ctx: The context including the Supabase client and OpenAI client
+        user_query: The user's question or query
+
+    Returns:
+        A formatted string containing the top 4 most relevant documents chunks
+    """
+    logger.info("Calling retrieve_relevant_documents_agui tool")
+    return await retrieve_relevant_documents_tool(ctx.deps.supabase, ctx.deps.embedding_client, user_query)
+
+@agui_agent.tool
+async def list_documents_agui(ctx: RunContext[AgentStateDeps]) -> List[str]:
+    """
+    Retrieve a list of all available documents.
+
+    Returns:
+        List[str]: List of documents including their metadata (URL/path, schema if applicable, etc.)
+    """
+    logger.info("Calling list_documents_agui tool")
+    return await list_documents_tool(ctx.deps.supabase)
+
+@agui_agent.tool
+async def get_document_content_agui(ctx: RunContext[AgentStateDeps], document_id: str) -> str:
+    """
+    Retrieve the full content of a specific document by combining all its chunks.
+
+    Args:
+        ctx: The context including the Supabase client
+        document_id: The ID (or file path) of the document to retrieve
+
+    Returns:
+        str: The full content of the document with all chunks combined in order
+    """
+    logger.info("Calling get_document_content_agui tool")
+    return await get_document_content_tool(ctx.deps.supabase, document_id)
+
+@agui_agent.tool
+async def execute_sql_query_agui(ctx: RunContext[AgentStateDeps], sql_query: str) -> str:
+    """
+    Run a SQL query - use this to query from the document_rows table once you know the file ID you are querying.
+    dataset_id is the file_id and you are always using the row_data for filtering, which is a jsonb field that has
+    all the keys from the file schema given in the document_metadata table.
+
+    Never use a placeholder file ID. Always use the list_documents tool first to get the file ID.
+
+    Example query:
+
+    SELECT AVG((row_data->>'revenue')::numeric)
+    FROM document_rows
+    WHERE dataset_id = '123';
+
+    Example query 2:
+
+    SELECT
+        row_data->>'category' as category,
+        SUM((row_data->>'sales')::numeric) as total_sales
+    FROM document_rows
+    WHERE dataset_id = '123'
+    GROUP BY row_data->>'category';
+
+    Args:
+        ctx: The context including the Supabase client
+        sql_query: The SQL query to execute (must be read-only)
+
+    Returns:
+        str: The results of the SQL query in JSON format
+    """
+    logger.info(f"Calling execute_sql_query_agui tool with SQL: {sql_query}")
+    return await execute_sql_query_tool(ctx.deps.supabase, sql_query)
+
+@agui_agent.tool
+async def image_analysis_agui(ctx: RunContext[AgentStateDeps], document_id: str, query: str) -> str:
+    """
+    Analyzes an image based on the document ID of the image provided.
+    This function pulls the binary of the image from the knowledge base
+    and passes that into a subagent with a vision LLM
+    Before calling this tool, call list_documents to see the images available
+    and to get the exact document ID for the image.
+
+    Args:
+        ctx: The context including the Supabase client
+        document_id: The ID (or file path) of the image to analyze
+        query: What to extract from the image analysis
+
+    Returns:
+        str: An analysis of the image based on the query
+    """
+    logger.info("Calling image_analysis_agui tool")
+    return await image_analysis_tool(ctx.deps.supabase, document_id, query)
+
+@agui_agent.tool
+async def execute_code_agui(ctx: RunContext[AgentStateDeps], code: str) -> str:
+    """
+    Executes a given Python code string in a protected environment.
+    Use print to output anything that you need as a result of executing the code.
+
+    Args:
+        code: Python code to execute
+
+    Returns:
+        str: Anything printed out to standard output with the print command
+    """
+    logger.info(f"executing code (AG-UI): {code}")
     logger.info(f"Result is: {execute_safe_code_tool(code)}")
     return execute_safe_code_tool(code)

@@ -40,8 +40,9 @@ from pydantic_ai.messages import (
 )
 
 # Import agent modules (now in same directory)
-from agent import agent, AgentDeps, get_model
+from agent import agent, AgentDeps, get_model, agui_agent
 from clients import get_agent_clients, get_mem0_client_async
+from ag_ui_handlers import handle_ag_ui_agent_request
 
 # Load environment variables from app/server/.env
 dotenv_path = Path(__file__).resolve().parent / '.env'
@@ -230,6 +231,56 @@ async def delete_conversation(session_id: str, user: Dict[str, Any] = Depends(ve
     except Exception as e:
         logger.error(f"Unexpected error archiving conversation {session_id}: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to delete conversation: {str(e)}")
+
+
+@app.post("/api/ag-ui")
+async def ag_ui_endpoint(request: Request, user: Dict[str, Any] = Depends(verify_token)):
+    """
+    AG-UI protocol endpoint for CopilotKit and other AG-UI-compatible frontends.
+
+    This endpoint provides standardized AG-UI protocol support while maintaining
+    backward compatibility with the existing custom streaming endpoint at
+    /api/pydantic-agent.
+
+    Features:
+    - Shared state management between frontend and agent
+    - Frontend actions (tools defined in UI that agent can call)
+    - AG-UI event streaming format
+    - Full CopilotKit compatibility
+
+    Args:
+        request: FastAPI request object
+        user: Authenticated user from JWT token
+
+    Returns:
+        StreamingResponse with AG-UI protocol events
+    """
+    # Check if AG-UI endpoint is enabled
+    if not os.getenv("AGUI_ENABLED", "true").lower() == "true":
+        raise HTTPException(status_code=503, detail="AG-UI endpoint is disabled")
+
+    try:
+        # Get environment configuration
+        brave_api_key = os.getenv("BRAVE_API_KEY")
+        searxng_base_url = os.getenv("SEARXNG_BASE_URL")
+
+        # Handle AG-UI request using the handler
+        return await handle_ag_ui_agent_request(
+            request=request,
+            agent=agui_agent,
+            supabase=supabase,
+            embedding_client=embedding_client,
+            http_client=http_client,
+            user_id=user.get("id"),
+            brave_api_key=brave_api_key,
+            searxng_base_url=searxng_base_url
+        )
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"AG-UI endpoint error: {e}")
+        raise HTTPException(status_code=500, detail=f"AG-UI request failed: {str(e)}")
+
 
 @app.post("/api/pydantic-agent")
 async def pydantic_agent(request: AgentRequest, user: Dict[str, Any] = Depends(verify_token)):
