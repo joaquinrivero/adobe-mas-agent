@@ -20,6 +20,7 @@ interface ChatLayoutProps {
   onSendMessage: (message: string) => void;
   onNewChat: () => void;
   onSelectConversation: (conversation: Conversation) => void;
+  onDeleteConversation?: (conversationId: string) => void;
   onToggleSidebar: () => void;
   newConversationId?: string | null;
 }
@@ -34,6 +35,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({
   onSendMessage,
   onNewChat,
   onSelectConversation,
+  onDeleteConversation,
   onToggleSidebar,
   newConversationId
 }) => {
@@ -83,6 +85,7 @@ export const ChatLayout: React.FC<ChatLayoutProps> = ({
       isCollapsed={isMobile ? false : isSidebarCollapsed} // For desktop, use the collapse state
       onNewChat={handleNewChat}
       onSelectConversation={handleSelectConversation}
+      onDeleteConversation={onDeleteConversation}
       selectedConversationId={selectedConversation?.session_id || null}
       onToggleSidebar={handleToggleSidebar}
       newConversationId={newConversationId}

@@ -13,8 +13,19 @@ import {
   Menu,
   Settings,
   MessageSquare,
-  Users
+  Users,
+  Trash2
 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { useAdmin } from '@/hooks/useAdmin';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -29,6 +40,7 @@ interface ChatSidebarProps {
   isCollapsed: boolean;
   onNewChat: () => void;
   onSelectConversation: (conversation: Conversation) => void;
+  onDeleteConversation?: (conversationId: string) => void;
   selectedConversationId: string | null;
   onToggleSidebar: () => void;
   newConversationId?: string | null;
@@ -39,6 +51,7 @@ export const ChatSidebar = ({
   isCollapsed,
   onNewChat,
   onSelectConversation,
+  onDeleteConversation,
   selectedConversationId,
   onToggleSidebar,
   newConversationId,
@@ -49,6 +62,7 @@ export const ChatSidebar = ({
   const [filteredConversations, setFilteredConversations] = useState<Conversation[]>(conversations);
   const location = useLocation();
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [conversationToDelete, setConversationToDelete] = useState<string | null>(null);
 
   // Filter conversations based on search input
   useEffect(() => {
@@ -148,27 +162,44 @@ export const ChatSidebar = ({
         <div className="space-y-1 p-2">
           {filteredConversations.length > 0 ? (
             filteredConversations.map((conversation) => (
-              <Button
+              <div
                 key={conversation.session_id}
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  "w-full justify-start font-normal text-sm",
-                  selectedConversationId === conversation.session_id && "bg-sidebar-accent text-sidebar-accent-foreground"
-                )}
-                onClick={() => onSelectConversation(conversation)}
+                className="group relative flex items-center"
               >
-                <MessageSquare className="mr-2 h-4 w-4" />
-                {newConversationId === conversation.session_id ? (
-                  <TypewriterText 
-                    text={conversation.title || ''} 
-                    duration={300} 
-                    className="truncate"
-                  />
-                ) : (
-                  <span className="truncate">{conversation.title}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn(
+                    "flex-1 justify-start font-normal text-sm pr-10",
+                    selectedConversationId === conversation.session_id && "bg-sidebar-accent text-sidebar-accent-foreground"
+                  )}
+                  onClick={() => onSelectConversation(conversation)}
+                >
+                  <MessageSquare className="mr-2 h-4 w-4" />
+                  {newConversationId === conversation.session_id ? (
+                    <TypewriterText
+                      text={conversation.title || ''}
+                      duration={300}
+                      className="truncate"
+                    />
+                  ) : (
+                    <span className="truncate">{conversation.title}</span>
+                  )}
+                </Button>
+                {onDeleteConversation && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConversationToDelete(conversation.session_id);
+                    }}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
                 )}
-              </Button>
+              </div>
             ))
           ) : (
             <div className="py-4 text-center text-sm text-muted-foreground">
@@ -209,11 +240,37 @@ export const ChatSidebar = ({
       </div>
       
       {/* Settings Modal */}
-      <SettingsModal 
+      <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
         currentFullName={user?.user_metadata?.full_name || null}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={conversationToDelete !== null} onOpenChange={(open) => !open && setConversationToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete this conversation. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (conversationToDelete && onDeleteConversation) {
+                  onDeleteConversation(conversationToDelete);
+                  setConversationToDelete(null);
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

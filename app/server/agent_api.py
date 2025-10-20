@@ -28,7 +28,8 @@ from db_utils import (
     store_message,
     convert_history_to_pydantic_format,
     check_rate_limit,
-    store_request
+    store_request,
+    archive_conversation
 )
 
 from pydantic_ai import Agent, BinaryContent
@@ -201,6 +202,34 @@ async def health_check():
         "mem0_enabled": mem0_client is not None,
         "timestamp": datetime.now(timezone.utc).isoformat()
     }
+
+@app.delete("/api/pydantic-agent/conversations/{session_id}")
+async def delete_conversation(session_id: str, user: Dict[str, Any] = Depends(verify_token)):
+    """Delete (archive) a conversation.
+
+    Args:
+        session_id: The session ID of the conversation to delete
+        user: The authenticated user from the token
+
+    Returns:
+        Success message with deleted session_id
+    """
+    try:
+        # Archive the conversation (soft delete)
+        await archive_conversation(supabase, session_id, user.get("id"))
+
+        logger.info(f"Successfully archived conversation {session_id} for user {user.get('id')}")
+        return {
+            "success": True,
+            "message": "Conversation deleted successfully",
+            "session_id": session_id
+        }
+    except HTTPException as e:
+        logger.error(f"HTTPException archiving conversation {session_id}: {e.detail}")
+        raise e
+    except Exception as e:
+        logger.error(f"Unexpected error archiving conversation {session_id}: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete conversation: {str(e)}")
 
 @app.post("/api/pydantic-agent")
 async def pydantic_agent(request: AgentRequest, user: Dict[str, Any] = Depends(verify_token)):

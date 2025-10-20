@@ -215,6 +215,7 @@ export const fetchConversations = async (user_id: string) => {
       .from('conversations')
       .select('*')
       .eq('user_id', user_id)
+      .eq('is_archived', false) // Filter out archived conversations
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -283,6 +284,33 @@ export const fetchMessages = async (session_id: string, user_id: string) => {
       stack: error instanceof Error ? error.stack : undefined,
       session_id,
       user_id,
+      timestamp: new Date().toISOString()
+    });
+    throw error;
+  }
+};
+
+export const deleteConversation = async (session_id: string, access_token?: string): Promise<boolean> => {
+  try {
+    const response = await fetch(`${AGENT_ENDPOINT}/conversations/${session_id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': access_token ? `Bearer ${access_token}` : '',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to delete conversation: ${response.status} - ${errorText}`);
+    }
+
+    console.log(`✅ Successfully deleted conversation ${session_id}`);
+    return true;
+  } catch (error) {
+    console.error('Error deleting conversation:', {
+      error,
+      message: error instanceof Error ? error.message : 'Unknown error',
+      session_id,
       timestamp: new Date().toISOString()
     });
     throw error;

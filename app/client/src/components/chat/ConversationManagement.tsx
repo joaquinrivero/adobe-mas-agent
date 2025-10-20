@@ -1,11 +1,12 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { fetchConversations } from '@/lib/api';
+import { fetchConversations, deleteConversation } from '@/lib/api';
 import { Conversation } from '@/types/database.types';
 import { useToast } from '@/hooks/use-toast';
+import { User } from '@supabase/supabase-js';
 
 interface ConversationManagementProps {
-  user: any;
+  user: User | null;
   isMounted: React.MutableRefObject<boolean>;
 }
 
@@ -89,6 +90,52 @@ export const useConversationManagement = ({
     setSelectedConversation(conversation);
   };
 
+  const handleDeleteConversation = useCallback(async (conversationId: string) => {
+    if (!user) return;
+
+    // Store conversations for potential rollback
+    const previousConversations = [...conversations];
+    const deletedConversation = conversations.find(c => c.session_id === conversationId);
+
+    try {
+      // Optimistic update - immediately remove from UI
+      setConversations(prev => prev.filter(c => c.session_id !== conversationId));
+
+      // If the deleted conversation was selected, switch to new chat
+      if (selectedConversation?.session_id === conversationId) {
+        handleNewChat();
+      }
+
+      // Get access token
+      const { data: { session } } = await import('@/lib/supabase').then(m => m.supabase.auth.getSession());
+      const accessToken = session?.access_token;
+
+      // Call API to delete conversation
+      await deleteConversation(conversationId, accessToken);
+
+      // Show success toast
+      toast({
+        title: 'Conversation deleted',
+        description: 'The conversation has been removed successfully.',
+      });
+    } catch (error) {
+      // Rollback on error - restore the conversation
+      console.error('Error deleting conversation:', error);
+      setConversations(previousConversations);
+
+      // Restore selected conversation if it was the deleted one
+      if (deletedConversation && selectedConversation?.session_id === conversationId) {
+        setSelectedConversation(deletedConversation);
+      }
+
+      toast({
+        title: 'Error deleting conversation',
+        description: error instanceof Error ? error.message : 'Failed to delete conversation. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [user, conversations, selectedConversation, toast]);
+
   // Initial load of conversations
   useEffect(() => {
     loadConversations();
@@ -101,6 +148,7 @@ export const useConversationManagement = ({
     setConversations,
     loadConversations,
     handleNewChat,
-    handleSelectConversation
+    handleSelectConversation,
+    handleDeleteConversation
   };
 };
