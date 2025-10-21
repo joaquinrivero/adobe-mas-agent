@@ -220,12 +220,87 @@ npm run lint               # Run linter
 
 ## API Endpoints
 
-- `POST /api/pydantic-agent` - Main agent endpoint with streaming support
+### Agent Endpoints
+
+- `POST /api/pydantic-agent` - Main agent endpoint with custom streaming (existing)
+- `POST /api/ag-ui` - AG-UI protocol endpoint for CopilotKit integration (new)
+
+### Conversation Endpoints
+
 - `GET /api/conversations/{session_id}` - Get conversation history
 - `POST /api/conversations` - Create new conversation
+- `DELETE /api/pydantic-agent/conversations/{session_id}` - Archive conversation
+
+### System Endpoints
+
 - `GET /health` - Health check endpoint
 
 For full API documentation, visit `http://localhost:8001/docs` when the server is running.
+
+## AG-UI Protocol Support
+
+This application now supports the **AG-UI (Agent User Interaction)** protocol for standardized communication with CopilotKit and other AG-UI-compatible frontends.
+
+### Why AG-UI?
+
+AG-UI provides:
+- ✅ **CopilotKit Compatibility**: Use CopilotChat, CopilotSidebar, and other UI components
+- ✅ **Frontend Actions**: Let agents call UI-defined functions
+- ✅ **Shared State**: Bidirectional state synchronization
+- ✅ **Standard Protocol**: Interoperability with AG-UI ecosystem
+
+### Quick Start with AG-UI
+
+```typescript
+import { CopilotKit } from "@copilotkit/react-core";
+import { CopilotChat } from "@copilotkit/react-ui";
+
+function App() {
+  return (
+    <CopilotKit
+      runtimeUrl="http://localhost:8001/api/ag-ui"
+      headers={{
+        Authorization: `Bearer ${supabaseToken}`
+      }}
+    >
+      <YourApp />
+      <CopilotChat
+        labels={{
+          title: "AI Assistant",
+          initial: "Hello! How can I help you today?"
+        }}
+      />
+    </CopilotKit>
+  );
+}
+```
+
+### AG-UI Configuration
+
+Configure AG-UI features in `app/server/.env`:
+
+```env
+# AG-UI Protocol Configuration
+AGUI_ENABLED=true                      # Enable/disable AG-UI endpoint
+AGUI_DEBUG=false                       # Enable debug logging
+AGUI_ALLOW_FRONTEND_ACTIONS=true       # Allow frontend actions
+AGUI_ENDPOINT_PATH=/api/ag-ui          # Endpoint path
+```
+
+### Documentation
+
+- **[AG-UI Integration Guide](./ai_docs/ag-ui-integration.md)** - Complete guide for using the AG-UI endpoint
+- **[Migration Guide](./ai_docs/migration-guide.md)** - Migrate from custom endpoint to AG-UI
+
+### Backward Compatibility
+
+The existing `/api/pydantic-agent` endpoint remains fully functional. Both endpoints:
+- Use the same authentication (Supabase JWT)
+- Share the same database and conversation history
+- Access the same agent tools and capabilities
+- Can be used simultaneously
+
+Choose the endpoint that best fits your use case!
 
 ### 3. Database Setup
 
