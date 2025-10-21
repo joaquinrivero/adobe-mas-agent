@@ -8,7 +8,7 @@ from openai import AsyncOpenAI
 from httpx import AsyncClient
 from supabase import Client
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 import os
 import logging
 
@@ -20,7 +20,8 @@ from tools import (
     list_documents_tool,
     get_document_content_tool,
     execute_sql_query_tool,
-    execute_safe_code_tool
+    execute_safe_code_tool,
+    get_adobe_products_tool
 )
 from ag_ui_types import ConversationState 
 
@@ -364,3 +365,79 @@ async def execute_code_agui(ctx: RunContext[AgentStateDeps], code: str) -> str:
     logger.info(f"executing code (AG-UI): {code}")
     logger.info(f"Result is: {execute_safe_code_tool(code)}")
     return execute_safe_code_tool(code)
+
+
+# ========== Adobe Products Tools ==========
+
+@agent.tool
+async def get_adobe_products(
+    ctx: RunContext[AgentDeps],
+    query: str,
+    product_line: Optional[str] = None,
+    audience_type: Optional[str] = None,
+    comparison_count: int = 3
+) -> str:
+    """
+    Get Adobe product information and display as interactive product cards.
+
+    Use this tool when the user asks about Adobe products, pricing, plans,
+    subscriptions, or wants to compare Adobe offerings. Returns rich HTML
+    cards that display in the chat interface with pricing and purchase links.
+
+    Available product lines: "firefly", "creative", "document-cloud"
+    Available audience types: "students", "business", "individual", "all"
+
+    Args:
+        query: User's question (e.g., "Show me Firefly pricing")
+        product_line: Optional filter - "firefly", "creative", "document-cloud"
+        audience_type: Optional filter - "students", "business", "individual", "all"
+        comparison_count: Number of products to show (default 3, max 6)
+
+    Returns:
+        HTML with interactive Adobe product cards
+    """
+    logger.info(f"Calling get_adobe_products tool: {query}")
+    return await get_adobe_products_tool(
+        ctx.deps.http_client,
+        query,
+        product_line,
+        audience_type,
+        comparison_count
+    )
+
+
+@agui_agent.tool
+async def get_adobe_products_agui(
+    ctx: RunContext[AgentStateDeps],
+    query: str,
+    product_line: Optional[str] = None,
+    audience_type: Optional[str] = None,
+    comparison_count: int = 3
+) -> str:
+    """
+    Get Adobe product information and display as interactive product cards.
+
+    Use this tool when the user asks about Adobe products, pricing, plans,
+    subscriptions, or wants to compare Adobe offerings. Returns rich HTML
+    cards that display in the chat interface with pricing and purchase links.
+
+    Available product lines: "firefly", "creative", "document-cloud"
+    Available audience types: "students", "business", "individual", "all"
+
+    Args:
+        query: User's question (e.g., "Show me Firefly pricing")
+        product_line: Optional filter - "firefly", "creative", "document-cloud"
+        audience_type: Optional filter - "students", "business", "individual", "all"
+        comparison_count: Number of products to show (default 3, max 6)
+
+    Returns:
+        HTML with interactive Adobe product cards
+    """
+    logger.info(f"Calling get_adobe_products_agui tool: {query}")
+    return await get_adobe_products_tool(
+        ctx.deps.http_client,
+        query,
+        product_line,
+        audience_type,
+        comparison_count
+    )

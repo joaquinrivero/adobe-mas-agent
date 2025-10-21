@@ -13,6 +13,8 @@ import sys
 import os
 import re
 import logging
+from adobe_commerce_client import fetch_adobe_commerce_data
+from adobe_mas_renderer import filter_products, render_product_comparison
 
 logger = logging.getLogger(__name__)
 
@@ -423,3 +425,58 @@ def execute_safe_code_tool(code: str) -> str:
         return ''.join(output)
     except Exception as e:
         return f"Error executing code: {str(e)}"
+
+
+async def get_adobe_products_tool(
+    http_client: AsyncClient,
+    query: str,
+    product_line: Optional[str] = None,
+    audience_type: Optional[str] = None,
+    comparison_count: int = 3
+) -> str:
+    """Get Adobe product information and render as interactive MAS cards.
+
+    This tool fetches live Adobe product data from the official Commerce API
+    and renders it as interactive MAS (Merch At Scale) web component cards
+    that display in the chat interface.
+
+    Args:
+        http_client: AsyncClient for API requests
+        query: User's question about Adobe products
+        product_line: Optional filter - "firefly", "creative", "document-cloud"
+        audience_type: Optional filter - "students", "business", "individual", "all"
+        comparison_count: Number of products to show (default 3, max 6)
+
+    Returns:
+        HTML with interactive Adobe product cards, or error message
+
+    Example:
+        html = await get_adobe_products_tool(
+            client,
+            "Show me Firefly pricing",
+            product_line="firefly",
+            audience_type="students"
+        )
+    """
+    try:
+        logger.info(f"get_adobe_products_tool: query='{query}', line={product_line}, audience={audience_type}")
+
+        # Fetch from Adobe Commerce API
+        commerce_data = await fetch_adobe_commerce_data(http_client)
+
+        # Extract and filter cards
+        references = commerce_data.get('references', {})
+        cards = filter_products(references, product_line, audience_type)
+
+        # Limit to requested count (max 6)
+        cards = cards[:min(comparison_count, 6)]
+
+        if not cards:
+            return '<div>No Adobe products found matching your criteria. Try: "Firefly", "Creative Cloud", "Document Cloud"</div>'
+
+        # Render as MAS components
+        return render_product_comparison(cards, query)
+
+    except Exception as e:
+        logger.error(f"Error in get_adobe_products_tool: {e}")
+        return f'<div>Error retrieving Adobe products: {str(e)}</div>'

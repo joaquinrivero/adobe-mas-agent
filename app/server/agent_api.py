@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException, Security, Depends, Request, Form
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
@@ -107,6 +108,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve Adobe MAS library locally to avoid CORS issues
+mas_path = Path(__file__).resolve().parent / "mas" / "dist"
+app.mount("/mas", StaticFiles(directory=str(mas_path)), name="mas")
+logger.info(f"Mounted MAS library at /mas from {mas_path}")
 
 
 async def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> Dict[str, Any]:

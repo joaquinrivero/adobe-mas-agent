@@ -11,6 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { cn } from '@/lib/utils';
+import { sanitizeToolHTML } from '@/lib/html-sanitizer';
 
 interface MessageItemProps {
   message: Message;
@@ -72,6 +73,17 @@ export const MessageItem = ({ message, isLastMessage = false }: MessageItemProps
   
   // Memoize the markdown content to prevent unnecessary re-renders
   // This is especially important for the first AI response
+  // Check if message contains tool-rendered HTML
+  const isToolRendered = useMemo(() => {
+    return message.message.content?.includes('data-tool-rendered="true"');
+  }, [message.message.content]);
+
+  // Sanitize and prepare HTML if tool-rendered
+  const sanitizedHTML = useMemo(() => {
+    if (!isToolRendered) return null;
+    return sanitizeToolHTML(message.message.content);
+  }, [isToolRendered, message.message.content]);
+
   const memoizedMarkdown = useMemo(() => {
     return (
       <ReactMarkdown
@@ -159,7 +171,14 @@ export const MessageItem = ({ message, isLastMessage = false }: MessageItemProps
               </div>
             )}
             <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>p]:mb-4">
-              {memoizedMarkdown}
+              {isToolRendered ? (
+                <div
+                  className="tool-rendered-content"
+                  dangerouslySetInnerHTML={{ __html: sanitizedHTML || '' }}
+                />
+              ) : (
+                memoizedMarkdown
+              )}
             </div>
           </div>
           
