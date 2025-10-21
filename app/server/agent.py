@@ -1,7 +1,7 @@
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.mcp import MCPServerHTTP
+# from pydantic_ai.mcp import MCPServerHTTP  # Optional: uncomment when using MCP server
 from dataclasses import dataclass
 from dotenv import load_dotenv
 from openai import AsyncOpenAI
