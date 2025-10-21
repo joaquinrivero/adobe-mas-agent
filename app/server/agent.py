@@ -20,7 +20,8 @@ from tools import (
     list_documents_tool,
     get_document_content_tool,
     execute_sql_query_tool,
-    execute_safe_code_tool
+    execute_safe_code_tool,
+    get_adobe_products_tool
 )
 from ag_ui_types import ConversationState 
 
@@ -233,6 +234,34 @@ async def execute_code(ctx: RunContext[AgentDeps], code: str) -> str:
     logger.info(f"Result is: {execute_safe_code_tool(code)}")
     return execute_safe_code_tool(code)
 
+@agent.tool
+async def get_adobe_products(ctx: RunContext[AgentDeps], query: str, product_line: str = None, audience_type: str = None, comparison_count: int = 3) -> str:
+    """
+    Get Adobe product information and display as interactive product cards.
+
+    Use this tool when the user asks about Adobe products, pricing, plans, subscriptions,
+    or wants to compare Adobe offerings. Returns rich HTML cards for display.
+
+    Args:
+        ctx: Agent context with database clients
+        query: User's question about Adobe products (e.g., "Show me Firefly pricing")
+        product_line: Optional filter - use "Firefly", "Creative Cloud", "Document Cloud", or "Express"
+        audience_type: Optional filter - use "all", "students", "business", or "photographers"
+        comparison_count: Number of products to show (default 3, max 6)
+
+    Returns:
+        HTML with interactive Adobe product cards
+    """
+    logger.info(f"Calling get_adobe_products tool with query: {query}")
+    return await get_adobe_products_tool(
+        ctx.deps.supabase,
+        ctx.deps.embedding_client,
+        query,
+        product_line=product_line,
+        audience_type=audience_type,
+        comparison_count=comparison_count
+    )
+
 
 # ========== AG-UI Agent Tools ==========
 # Register the same tools for the AG-UI agent with AgentStateDeps
@@ -364,3 +393,31 @@ async def execute_code_agui(ctx: RunContext[AgentStateDeps], code: str) -> str:
     logger.info(f"executing code (AG-UI): {code}")
     logger.info(f"Result is: {execute_safe_code_tool(code)}")
     return execute_safe_code_tool(code)
+
+@agui_agent.tool
+async def get_adobe_products_agui(ctx: RunContext[AgentStateDeps], query: str, product_line: str = None, audience_type: str = None, comparison_count: int = 3) -> str:
+    """
+    Get Adobe product information and display as interactive product cards.
+
+    Use this tool when the user asks about Adobe products, pricing, plans, subscriptions,
+    or wants to compare Adobe offerings. Returns rich HTML cards for display.
+
+    Args:
+        ctx: Agent context with database clients
+        query: User's question about Adobe products (e.g., "Show me Firefly pricing")
+        product_line: Optional filter - use "Firefly", "Creative Cloud", "Document Cloud", or "Express"
+        audience_type: Optional filter - use "all", "students", "business", or "photographers"
+        comparison_count: Number of products to show (default 3, max 6)
+
+    Returns:
+        HTML with interactive Adobe product cards
+    """
+    logger.info(f"Calling get_adobe_products_agui tool with query: {query}")
+    return await get_adobe_products_tool(
+        ctx.deps.supabase,
+        ctx.deps.embedding_client,
+        query,
+        product_line=product_line,
+        audience_type=audience_type,
+        comparison_count=comparison_count
+    )

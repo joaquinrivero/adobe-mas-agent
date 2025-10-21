@@ -1,0 +1,304 @@
+{
+  "products": [
+    {
+      "id": "firefly-standard",
+      "productName": "Adobe Firefly Standard",
+      "productLine": "Firefly",
+      "tier": "standard",
+      "audience": ["all"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/firefly.svg",
+      "price": "Free",
+      "priceMonthly": 0,
+      "currency": "USD",
+      "description": "Get started with AI-powered creative tools for everyday projects",
+      "credits": "25 generative credits/month",
+      "features": [
+        "25 generative credits per month",
+        "Text to Image",
+        "Generative Fill",
+        "Text Effects",
+        "Standard content license",
+        "Community support"
+      ],
+      "detailsLink": "https://www.adobe.com/products/firefly/features.html",
+      "ctaText": "Get started free",
+      "ctaLink": "https://firefly.adobe.com",
+      "metadata": {
+        "category": "creative-ai",
+        "use_cases": ["design", "content-creation", "ai-generation"],
+        "last_updated": "2025-01-20"
+      }
+    },
+    {
+      "id": "firefly-premium",
+      "productName": "Adobe Firefly Premium",
+      "productLine": "Firefly",
+      "tier": "premium",
+      "audience": ["all"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/firefly.svg",
+      "price": "US$4.99/mo",
+      "priceMonthly": 4.99,
+      "currency": "USD",
+      "description": "Enhanced AI creativity with more credits and priority processing",
+      "credits": "100 generative credits/month",
+      "features": [
+        "100 generative credits per month",
+        "Priority processing",
+        "All Standard features",
+        "Remove watermarks",
+        "Premium content license",
+        "Email support"
+      ],
+      "detailsLink": "https://www.adobe.com/products/firefly/pricing.html",
+      "ctaText": "Buy now",
+      "ctaLink": "https://commerce.adobe.com/store/firefly",
+      "metadata": {
+        "category": "creative-ai",
+        "use_cases": ["professional-design", "content-creation", "marketing"],
+        "last_updated": "2025-01-20"
+      }
+    },
+    {
+      "id": "firefly-pro",
+      "productName": "Adobe Firefly Pro",
+      "productLine": "Firefly",
+      "tier": "pro",
+      "audience": ["all"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/firefly.svg",
+      "price": "US$19.99/mo",
+      "priceMonthly": 19.99,
+      "currency": "USD",
+      "description": "Professional AI tools with unlimited creativity and commercial licensing",
+      "credits": "Unlimited generative credits",
+      "features": [
+        "Unlimited generative credits",
+        "Priority processing",
+        "All Premium features",
+        "Commercial use license",
+        "Advanced customization",
+        "Priority email & chat support",
+        "Early access to new features"
+      ],
+      "detailsLink": "https://www.adobe.com/products/firefly/pricing.html",
+      "ctaText": "Buy now",
+      "ctaLink": "https://commerce.adobe.com/store/firefly",
+      "metadata": {
+        "category": "creative-ai",
+        "use_cases": ["professional-design", "commercial-use", "enterprise"],
+        "last_updated": "2025-01-20"
+      }
+    },
+    {
+      "id": "creative-cloud-photography",
+      "productName": "Creative Cloud Photography",
+      "productLine": "Creative Cloud",
+      "tier": "photography",
+      "audience": ["all", "photographers"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/creative-cloud.svg",
+      "price": "US$9.99/mo",
+      "priceMonthly": 9.99,
+      "currency": "USD",
+      "description": "Complete photography toolkit with Lightroom and Photoshop",
+      "credits": "20GB cloud storage",
+      "features": [
+        "Adobe Photoshop",
+        "Adobe Lightroom (Desktop & Mobile)",
+        "20GB cloud storage",
+        "Adobe Portfolio",
+        "Adobe Fonts",
+        "Premium tutorials"
+      ],
+      "detailsLink": "https://www.adobe.com/creativecloud/photography.html",
+      "ctaText": "Buy now",
+      "ctaLink": "https://www.adobe.com/creativecloud/plans.html",
+      "metadata": {
+        "category": "creative-suite",
+        "use_cases": ["photography", "photo-editing", "image-management"],
+        "last_updated": "2025-01-20"
+      }
+    },
+    {
+      "id": "creative-cloud-all-apps",
+      "productName": "Creative Cloud All Apps",
+      "productLine": "Creative Cloud",
+      "tier": "all-apps",
+      "audience": ["all"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/creative-cloud.svg",
+      "price": "US$59.99/mo",
+      "priceMonthly": 59.99,
+      "currency": "USD",
+      "description": "The complete creative toolkit with 20+ apps and services",
+      "credits": "100GB cloud storage",
+      "features": [
+        "20+ Creative Cloud apps",
+        "Photoshop, Illustrator, InDesign",
+        "Premiere Pro, After Effects",
+        "Adobe Express, Adobe Firefly",
+        "100GB cloud storage",
+        "Adobe Fonts",
+        "Adobe Portfolio",
+        "Behance ProSite",
+        "Premium tutorials & support"
+      ],
+      "detailsLink": "https://www.adobe.com/creativecloud/all-apps.html",
+      "ctaText": "Buy now",
+      "ctaLink": "https://www.adobe.com/creativecloud/plans.html",
+      "metadata": {
+        "category": "creative-suite",
+        "use_cases": ["professional-design", "video-editing", "creative-work"],
+        "last_updated": "2025-01-20"
+      }
+    },
+    {
+      "id": "creative-cloud-students",
+      "productName": "Creative Cloud for Students",
+      "productLine": "Creative Cloud",
+      "tier": "student",
+      "audience": ["students"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/creative-cloud.svg",
+      "price": "US$19.99/mo",
+      "priceMonthly": 19.99,
+      "currency": "USD",
+      "description": "Save over 60% on Creative Cloud All Apps",
+      "credits": "100GB cloud storage",
+      "features": [
+        "All Creative Cloud apps",
+        "100GB cloud storage",
+        "Adobe Fonts",
+        "Adobe Portfolio",
+        "Premium tutorials",
+        "Student verification required",
+        "First year pricing"
+      ],
+      "detailsLink": "https://www.adobe.com/creativecloud/buy/students.html",
+      "ctaText": "Buy now",
+      "ctaLink": "https://www.adobe.com/creativecloud/buy/students.html",
+      "metadata": {
+        "category": "creative-suite",
+        "use_cases": ["education", "learning", "student-projects"],
+        "last_updated": "2025-01-20"
+      }
+    },
+    {
+      "id": "acrobat-standard",
+      "productName": "Acrobat Standard",
+      "productLine": "Document Cloud",
+      "tier": "standard",
+      "audience": ["all", "business"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/acrobat.svg",
+      "price": "US$12.99/mo",
+      "priceMonthly": 12.99,
+      "currency": "USD",
+      "description": "Essential PDF tools for everyday document tasks",
+      "credits": "100GB cloud storage",
+      "features": [
+        "Create, edit, and export PDFs",
+        "Convert PDFs to Office formats",
+        "Combine files into PDFs",
+        "Add comments and markup",
+        "Fill and sign forms",
+        "100GB cloud storage",
+        "Mobile app access"
+      ],
+      "detailsLink": "https://www.adobe.com/acrobat/pricing.html",
+      "ctaText": "Buy now",
+      "ctaLink": "https://www.adobe.com/acrobat/pricing.html",
+      "metadata": {
+        "category": "document-management",
+        "use_cases": ["pdf-editing", "document-workflow", "business"],
+        "last_updated": "2025-01-20"
+      }
+    },
+    {
+      "id": "acrobat-pro",
+      "productName": "Acrobat Pro",
+      "productLine": "Document Cloud",
+      "tier": "pro",
+      "audience": ["all", "business"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/acrobat.svg",
+      "price": "US$19.99/mo",
+      "priceMonthly": 19.99,
+      "currency": "USD",
+      "description": "Advanced PDF tools for professional workflows",
+      "credits": "100GB cloud storage",
+      "features": [
+        "All Standard features",
+        "Edit text and images in PDFs",
+        "Compare two PDF versions",
+        "Redact sensitive information",
+        "Create and validate PDFs for accessibility",
+        "Advanced form creation",
+        "Batch processing",
+        "100GB cloud storage"
+      ],
+      "detailsLink": "https://www.adobe.com/acrobat/pricing.html",
+      "ctaText": "Buy now",
+      "ctaLink": "https://www.adobe.com/acrobat/pricing.html",
+      "metadata": {
+        "category": "document-management",
+        "use_cases": ["professional-pdf", "compliance", "legal"],
+        "last_updated": "2025-01-20"
+      }
+    },
+    {
+      "id": "adobe-express-free",
+      "productName": "Adobe Express Free",
+      "productLine": "Express",
+      "tier": "free",
+      "audience": ["all"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/express.svg",
+      "price": "Free",
+      "priceMonthly": 0,
+      "currency": "USD",
+      "description": "Quick and easy design for social media and web",
+      "credits": "2GB cloud storage",
+      "features": [
+        "Thousands of templates",
+        "Quick actions (resize, remove background)",
+        "Basic photo editing",
+        "Adobe Fonts (limited)",
+        "2GB cloud storage",
+        "Social media scheduling"
+      ],
+      "detailsLink": "https://www.adobe.com/express/",
+      "ctaText": "Get started free",
+      "ctaLink": "https://www.adobe.com/express/",
+      "metadata": {
+        "category": "quick-design",
+        "use_cases": ["social-media", "quick-graphics", "templates"],
+        "last_updated": "2025-01-20"
+      }
+    },
+    {
+      "id": "adobe-express-premium",
+      "productName": "Adobe Express Premium",
+      "productLine": "Express",
+      "tier": "premium",
+      "audience": ["all"],
+      "icon": "https://www.adobe.com/content/dam/shared/images/product-icons/svg/express.svg",
+      "price": "US$9.99/mo",
+      "priceMonthly": 9.99,
+      "currency": "USD",
+      "description": "Pro design tools with premium features and templates",
+      "credits": "100GB cloud storage",
+      "features": [
+        "All Free features",
+        "Premium templates",
+        "Brand kit with custom fonts & colors",
+        "Remove backgrounds from images",
+        "Resize designs instantly",
+        "100GB cloud storage",
+        "Adobe Fonts (full library)",
+        "Priority support"
+      ],
+      "detailsLink": "https://www.adobe.com/express/pricing",
+      "ctaText": "Buy now",
+      "ctaLink": "https://www.adobe.com/express/pricing",
+      "metadata": {
+        "category": "quick-design",
+        "use_cases": ["branding", "marketing", "social-media-pro"],
+        "last_updated": "2025-01-20"
+      }
+    }
+  ]
+}

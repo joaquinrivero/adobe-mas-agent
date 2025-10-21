@@ -11,6 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { atomDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { cn } from '@/lib/utils';
+import { sanitizeToolHTML, isToolRenderedHTML } from '@/lib/html-sanitizer';
 
 interface MessageItemProps {
   message: Message;
@@ -37,11 +38,22 @@ export const MessageItem = ({ message, isLastMessage = false }: MessageItemProps
   const isAI = message.message.type.toLowerCase() === 'ai';
   const isUser = !isAI;
 
+  // Check if this is tool-rendered HTML content
+  const isToolHTML = useMemo(() => {
+    return isAI && isToolRenderedHTML(message.message.content);
+  }, [isAI, message.message.content]);
+
   // Process the message content to properly handle double newlines
   const processedContent = useMemo(() => {
     if (!message.message.content) return '';
     return message.message.content;
   }, [message.message.content]);
+
+  // Sanitize HTML if it's tool-rendered content
+  const sanitizedHTML = useMemo(() => {
+    if (!isToolHTML) return '';
+    return sanitizeToolHTML(message.message.content);
+  }, [isToolHTML, message.message.content]);
   
   // Check if the message has file attachments
   const hasFiles = useMemo(() => {
@@ -158,9 +170,17 @@ export const MessageItem = ({ message, isLastMessage = false }: MessageItemProps
                 ))}
               </div>
             )}
-            <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>p]:mb-4">
-              {memoizedMarkdown}
-            </div>
+            {/* Render tool HTML or markdown based on content type */}
+            {isToolHTML ? (
+              <div
+                className="tool-rendered-content w-full"
+                dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
+              />
+            ) : (
+              <div className="prose prose-sm dark:prose-invert max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0 [&>p]:mb-4">
+                {memoizedMarkdown}
+              </div>
+            )}
           </div>
           
           <div className="flex items-center gap-2">

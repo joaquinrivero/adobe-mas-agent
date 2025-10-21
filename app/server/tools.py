@@ -316,6 +316,169 @@ async def image_analysis_tool(supabase: Client, document_id: str, query: str) ->
         logger.error(f"Error analyzing image: {e}")
         return f"Error analyzing image: {str(e)}"           
 
+async def get_adobe_products_rag_query(
+    supabase: Client,
+    embedding_client: AsyncOpenAI,
+    query: str,
+    product_line: Optional[str] = None,
+    audience_type: Optional[str] = None,
+    match_count: int = 5
+) -> List[Dict[str, Any]]:
+    """
+    Query RAG system for Adobe products based on semantic search.
+
+    Args:
+        supabase: Supabase client
+        embedding_client: OpenAI client for embeddings
+        query: User's product query
+        product_line: Optional filter for product line (Firefly, Creative Cloud, etc.)
+        audience_type: Optional filter for audience (students, business, all)
+        match_count: Number of results to return (default 5)
+
+    Returns:
+        List of product dictionaries matching the query
+    """
+    try:
+        # Get embedding for the query
+        query_embedding = await get_embedding(query, embedding_client)
+
+        # Query Supabase for relevant products
+        result = supabase.rpc(
+            'match_documents',
+            {
+                'query_embedding': query_embedding,
+                'match_count': match_count * 2  # Get more to allow filtering
+            }
+        ).execute()
+
+        if not result.data:
+            return []
+
+        # Filter results by file_id to only get Adobe products
+        adobe_products = [
+            doc for doc in result.data
+            if doc.get('metadata', {}).get('file_id') == 'adobe-products-catalog'
+        ]
+
+        # Apply additional filters if provided
+        if product_line:
+            adobe_products = [
+                doc for doc in adobe_products
+                if doc.get('metadata', {}).get('product_line', '').lower() == product_line.lower()
+            ]
+
+        if audience_type:
+            adobe_products = [
+                doc for doc in adobe_products
+                if audience_type.lower() in [a.lower() for a in doc.get('metadata', {}).get('audience', [])]
+            ]
+
+        # Limit to requested count
+        adobe_products = adobe_products[:match_count]
+
+        # Extract and restructure product data from metadata
+        products = []
+        for doc in adobe_products:
+            metadata = doc.get('metadata', {})
+            # Reconstruct product object from metadata
+            product = {
+                'id': metadata.get('product_id'),
+                'productName': metadata.get('file_title', '').replace('Adobe Product: ', ''),
+                'productLine': metadata.get('product_line'),
+                'tier': metadata.get('tier'),
+                'audience': metadata.get('audience', []),
+                'price': f"US${metadata.get('price_monthly', 0)}/mo" if metadata.get('price_monthly', 0) > 0 else "Free",
+                'priceMonthly': metadata.get('price_monthly', 0),
+                'description': doc.get('content', '').split('Description: ')[-1].split('\n')[0] if 'Description: ' in doc.get('content', '') else '',
+                'features': [line.replace('- ', '') for line in doc.get('content', '').split('Features:\n')[-1].split('\n') if line.startswith('- ')],
+                'detailsLink': metadata.get('file_url'),
+                'ctaText': 'Learn more',
+                'ctaLink': metadata.get('file_url'),
+                'credits': doc.get('content', '').split('Credits: ')[-1].split('\n')[0] if 'Credits: ' in doc.get('content', '') else ''
+            }
+            products.append(product)
+
+        return products
+
+    except Exception as e:
+        logger.error(f"Error querying Adobe products: {e}")
+        return []
+
+
+async def get_adobe_products_tool(
+    supabase: Client,
+    embedding_client: AsyncOpenAI,
+    query: str,
+    product_line: Optional[str] = None,
+    audience_type: Optional[str] = None,
+    comparison_count: int = 3
+) -> str:
+    """
+    Get Adobe product information and render as interactive MAS web component cards.
+
+    Use this tool when the user asks about Adobe products, pricing, plans, subscriptions,
+    or wants to compare Adobe offerings. This returns rich HTML cards that display in the chat.
+
+    Args:
+        supabase: Supabase client for database access
+        embedding_client: OpenAI client for generating embeddings
+        query: User's question about Adobe products (e.g., "Show me Firefly pricing")
+        product_line: Optional filter for specific product line (Firefly, Creative Cloud, Document Cloud, Express)
+        audience_type: Optional filter for audience (all, students, business, photographers)
+        comparison_count: Number of products to display for comparison (default 3, max 6)
+
+    Returns:
+        HTML string containing MAS web component cards for the requested products
+    """
+    try:
+        # Import the renderer
+        from adobe_mas_renderer import render_search_results
+
+        # Limit comparison count to reasonable range
+        comparison_count = min(max(comparison_count, 1), 6)
+
+        # Query RAG for relevant products
+        logger.info(f"Querying Adobe products: query='{query}', product_line={product_line}, audience={audience_type}")
+        products = await get_adobe_products_rag_query(
+            supabase,
+            embedding_client,
+            query,
+            product_line=product_line,
+            audience_type=audience_type,
+            match_count=comparison_count
+        )
+
+        if not products:
+            return """
+<div class="adobe-products-container">
+  <div class="no-products-message">
+    <p>No Adobe products found matching your query. Try asking about:
+    <ul>
+      <li>Adobe Firefly pricing</li>
+      <li>Creative Cloud plans for students</li>
+      <li>Adobe photography tools</li>
+      <li>Document Cloud options</li>
+    </ul>
+    </p>
+  </div>
+</div>"""
+
+        # Render products as MAS web components
+        logger.info(f"Rendering {len(products)} Adobe products as MAS cards")
+        html_output = render_search_results(products, query)
+
+        return html_output
+
+    except Exception as e:
+        logger.error(f"Error in get_adobe_products_tool: {e}")
+        return f"""
+<div class="adobe-products-container">
+  <div class="no-products-message">
+    <p>Sorry, there was an error retrieving Adobe product information. Please try again.</p>
+  </div>
+</div>"""
+
+
 def execute_safe_code_tool(code: str) -> str:
     # Set up allowed modules
     allowed_modules = {
