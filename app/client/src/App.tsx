@@ -11,6 +11,7 @@ import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import { AuthCallback } from "./components/auth/AuthCallback";
 import { ThemeProvider } from "@/components/theme-provider";
+import { CopilotKit } from "@copilotkit/react-core";
 import { useEffect } from "react";
 
 const queryClient = new QueryClient();
@@ -77,18 +78,41 @@ const DarkThemeEnforcer = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// CopilotKit provider with auth support
+const CopilotKitProvider = ({ children }: { children: React.ReactNode }) => {
+  const { session } = useAuth();
+
+  // Get backend URL from environment or use default
+  const runtimeUrl = import.meta.env.VITE_BACKEND_URL
+    ? `${import.meta.env.VITE_BACKEND_URL}/api/ag-ui`
+    : 'http://localhost:8001/api/ag-ui';
+
+  // Build headers with auth token if available
+  const headers = session?.access_token
+    ? { Authorization: `Bearer ${session.access_token}` }
+    : {};
+
+  return (
+    <CopilotKit runtimeUrl={runtimeUrl} headers={headers}>
+      {children}
+    </CopilotKit>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider defaultTheme="dark" forcedTheme="dark">
       <DarkThemeEnforcer>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </TooltipProvider>
+          <CopilotKitProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </TooltipProvider>
+          </CopilotKitProvider>
         </AuthProvider>
       </DarkThemeEnforcer>
     </ThemeProvider>

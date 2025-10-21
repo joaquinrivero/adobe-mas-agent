@@ -423,3 +423,41 @@ def execute_safe_code_tool(code: str) -> str:
         return ''.join(output)
     except Exception as e:
         return f"Error executing code: {str(e)}"
+
+
+async def get_adobe_products_tool(query: str, max_results: int = 6) -> str:
+    """
+    Get Adobe product recommendations based on user query.
+
+    Use this tool when the user asks about Adobe products, Creative Cloud,
+    software recommendations, or specific Adobe applications.
+
+    Examples of when to use this tool:
+    - "Show me Adobe Creative Cloud products"
+    - "What Adobe products are good for photographers?"
+    - "I need software for video editing"
+    - "Tell me about Adobe products"
+
+    Args:
+        query: The user's query about Adobe products (e.g., "creative cloud", "photoshop")
+        max_results: Maximum number of products to return (default: 6)
+
+    Returns:
+        JSON string containing an array of Adobe products with details
+        (name, description, price, CTA, etc.) for frontend rendering
+    """
+    try:
+        from adobe_commerce_client import get_adobe_commerce_client
+
+        client = get_adobe_commerce_client()
+        products = await client.get_products_by_query(query, max_results)
+
+        # Return as JSON string for frontend parsing
+        return json.dumps(products, indent=2)
+
+    except Exception as e:
+        logger.error(f"Error fetching Adobe products: {e}")
+        return json.dumps({
+            "error": f"Failed to fetch Adobe products: {str(e)}",
+            "products": []
+        })

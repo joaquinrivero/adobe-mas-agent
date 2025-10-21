@@ -20,7 +20,8 @@ from tools import (
     list_documents_tool,
     get_document_content_tool,
     execute_sql_query_tool,
-    execute_safe_code_tool
+    execute_safe_code_tool,
+    get_adobe_products_tool
 )
 from ag_ui_types import ConversationState 
 
@@ -364,3 +365,28 @@ async def execute_code_agui(ctx: RunContext[AgentStateDeps], code: str) -> str:
     logger.info(f"executing code (AG-UI): {code}")
     logger.info(f"Result is: {execute_safe_code_tool(code)}")
     return execute_safe_code_tool(code)
+
+@agui_agent.tool
+async def get_adobe_products(ctx: RunContext[AgentStateDeps], query: str, max_results: int = 6) -> str:
+    """
+    Get Adobe product recommendations based on user query. Returns product data as JSON for frontend rendering.
+
+    Use this tool when the user asks about Adobe products, Creative Cloud,
+    software recommendations, or specific Adobe applications.
+
+    Examples of when to use this tool:
+    - "Show me Adobe Creative Cloud products"
+    - "What Adobe products are good for photographers?"
+    - "I need software for video editing"
+    - "Tell me about Adobe products"
+
+    Args:
+        ctx: The context for the agent
+        query: The user's query about Adobe products (e.g., "creative cloud", "photoshop")
+        max_results: Maximum number of products to return (default: 6)
+
+    Returns:
+        JSON string containing an array of Adobe products with details for frontend rendering
+    """
+    logger.info(f"Calling get_adobe_products tool with query: {query}")
+    return await get_adobe_products_tool(query, max_results)

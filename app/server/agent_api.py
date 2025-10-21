@@ -3,6 +3,7 @@ from fastapi import FastAPI, HTTPException, Security, Depends, Request, Form
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from contextlib import asynccontextmanager
 from supabase import create_client, Client
 from datetime import datetime, timezone, timedelta
@@ -107,6 +108,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Mount static files for Adobe MAS library
+mas_dist_path = Path(__file__).resolve().parent / "mas" / "dist"
+app.mount("/mas", StaticFiles(directory=str(mas_dist_path)), name="mas")
 
 
 async def verify_token(credentials: HTTPAuthorizationCredentials = Security(security)) -> Dict[str, Any]:

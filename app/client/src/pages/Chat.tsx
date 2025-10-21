@@ -7,8 +7,11 @@ import { ChatLayout } from '@/components/chat/ChatLayout';
 import { useConversationManagement } from '@/components/chat/ConversationManagement';
 import { useMessageHandling } from '@/components/chat/MessageHandling';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAdobeProductRenderer } from '@/hooks/useAdobeProductRenderer';
 
 export const Chat = () => {
+  // Register Adobe product renderer for CopilotKit
+  useAdobeProductRenderer();
   const { user, session } = useAuth();
   const { toast } = useToast();
   const isMobile = useIsMobile();
