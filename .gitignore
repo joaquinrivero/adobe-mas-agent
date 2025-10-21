@@ -1,3 +1,6 @@
+# Playwright MCP screenshots and artifacts
+.playwright-mcp/
+
 # Environment variables
 .env
 app/server/.env
